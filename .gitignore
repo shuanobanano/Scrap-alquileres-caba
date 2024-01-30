@@ -1,0 +1,7 @@
+/properties.db
+/configuration.yml
+/**/__pycache__
+/.vscode
+/.idea
+/.venv
+/build
