@@ -2,6 +2,9 @@
 /configuration.yml
 /**/__pycache__
 /.vscode
-/.idea
+/idea
 /.venv
 /build
+/error_logs
+/cache
+/output
