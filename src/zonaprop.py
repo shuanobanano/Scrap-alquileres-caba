@@ -1,11 +1,9 @@
-from bs4 import BeautifulSoup
 import pandas as pd
 import numpy as np
 from botasaurus import *
-import os
 import time
 import requests
-import re
+from typing import Literal
 from src.constants import zona_prop_url
 
 
@@ -80,7 +78,7 @@ def scrape_property_listings(request: AntiDetectRequests, link: str) -> list:
                 # break#!
             if next_page and next_page['href']:
                 # Update the link for the next iteration
-                link = 'https://www.zonaprop.com.ar/' + next_page['href']
+                link = zona_prop_url + next_page['href']
                 print(next_page['href'])
             else:
                 # No more pages, break the loop
@@ -93,10 +91,13 @@ def scrape_property_listings(request: AntiDetectRequests, link: str) -> list:
             break
     return properties
 
-def _export_scrap_zonaprop(scrap_results:dict):
-    pd.DataFrame(scrap_results).to_parquet("output/zonaprop.pkt")
+def _export_scrap_zonaprop(scrap_results:dict, type_building):
+    pd.DataFrame(scrap_results).to_parquet(f"./output/zonaprop_{type_building}.pkt")
 
-def main_scrap_zonaprop(export_final_results:bool = True) -> list | None:
+def main_scrap_zonaprop(
+    type_building:Literal["locales-comerciales", "departamentos","oficinas-comerciales"],
+    export_final_results:bool = True,
+                        ) -> list | None:
     """Runs the main process of scraping property listings from ZonaProp.
 
     Returns:
@@ -104,11 +105,12 @@ def main_scrap_zonaprop(export_final_results:bool = True) -> list | None:
     """
     try:
         request = AntiDetectRequests()
-        url = zona_prop_url
+        url = zona_prop_url + type_building + "-alquiler-capital-federal.html"
         final_dict = scrape_property_listings(request, url)
         # print(final_dict)
+        if export_final_results:
+            _export_scrap_zonaprop(final_dict, type_building)
+            print("Results exported correctly")
         return final_dict
     except Exception as e:
         print(f"An error occurred: {e}")
-    if export_final_results:
-        _export_scrap_zonaprop(final_dict)
