@@ -51,7 +51,7 @@ def _parse_property(property_element) -> dict:
         'Summarize': summarize_element.text if summarize_element else np.nan,
         'Description': description_element.text if description_element else np.nan,
         'Expensas': expensas_element.text if expensas_element else np.nan,
-        'Link': 'https://www.zonaprop.com.ar' + ap_link_element if ap_link_element else np.nan,
+        'Link': zona_prop_url + ap_link_element if ap_link_element else np.nan,
     }
     
     
