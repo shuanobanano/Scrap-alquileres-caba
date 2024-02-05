@@ -2,10 +2,26 @@ import pandas as pd
 import numpy as np
 from botasaurus import *
 import time
+import re
 import requests
 from typing import Literal
-from src.constants import zona_prop_url
+from src.constants import zona_prop_url, max_number_pages_zonaprop
 
+def _get_page_number_url(number:int, type_building:str, type_operation:str) -> str:
+    url = zona_prop_url + type_building + f"-{type_operation}-capital-federal-pagina-{number}.html"
+    return url
+
+def _get_url_list(max_number:int, type_building:str, type_operation:str) -> list[str]:
+    request = AntiDetectRequests()
+    response = request.get(_get_page_number_url(max_number, type_building, type_operation), allow_redirects=True)
+    last_page_url = response.url
+    match = re.search(r'(\d+)\.html$', last_page_url)
+    if match:
+        last_page_number = (match.group(1))
+    else:
+        print("Could not find last webpage, try again in a few minutes")
+    page_list = [_get_page_number_url(i, type_building, type_operation) for i in range(1, int(last_page_number) + 1)]
+    return page_list
 
 def _parse_property_listings(soup) -> list:
     """Parses property listings from a BeautifulSoup object.
@@ -19,7 +35,11 @@ def _parse_property_listings(soup) -> list:
     property_elements = soup.select('div.sc-1tt2vbg-4.dFNvko')
     properties = []
     for property_element in property_elements:
-        properties.append(_parse_property(property_element))
+        try:
+            properties.append(_parse_property(property_element))
+        except Exception:
+            #There are 'Developing' buildings with a range of prices. 
+            pass
     return properties
 
 def _parse_property(property_element) -> dict:
@@ -55,7 +75,9 @@ def _parse_property(property_element) -> dict:
     }
     
     
-def scrape_property_listings(request: AntiDetectRequests, link: str) -> list:
+def _scrape_property_listings(request: AntiDetectRequests, 
+                              url_list: list[str],
+                              ) -> list:
     """Scrapes property listings from ZonaProp.
 
     Args:
@@ -66,23 +88,25 @@ def scrape_property_listings(request: AntiDetectRequests, link: str) -> list:
         list: A list of dictionaries, each representing a property listing.
     """
     properties = []
-    # itereation_count = 0#!
-    while True:
-        # itereation_count += 1#!
+    # itereation_count = 0#!debug
+    # while True:
+    for link in url_list:
+        # itereation_count += 1#!debug
+        print(link)
         try:
             soup = request.bs4(link)
             properties += _parse_property_listings(soup)
-            # Find the next page button
-            next_page = soup.select_one('a[data-qa="PAGING_NEXT"]')
-            # if itereation_count >= 1:#!
-                # break#!
-            if next_page and next_page['href']:
-                # Update the link for the next iteration
-                link = zona_prop_url + next_page['href']
-                print(next_page['href'])
-            else:
-                # No more pages, break the loop
-                break
+            # # Find the next page button
+            # next_page = soup.select_one('a[data-qa="PAGING_NEXT"]')
+            # if itereation_count >= 1:#!debug
+                # break#!debug
+            # if next_page and next_page['href']:
+            #     # Update the link for the next iteration
+            #     link = zona_prop_url + next_page['href']
+            #     print(next_page['href'])
+            # else:
+            #     # No more pages, break the loop
+            #     break
         except requests.exceptions.HTTPError as e:
             print(f"HTTPError occurred: {e}. Retrying in 15 minutes.")
             time.sleep(15*60) # Sleep for 15 minutes
@@ -91,11 +115,14 @@ def scrape_property_listings(request: AntiDetectRequests, link: str) -> list:
             break
     return properties
 
-def _export_scrap_zonaprop(scrap_results:dict, type_building):
-    pd.DataFrame(scrap_results).to_parquet(f"./output/zonaprop_{type_building}.pkt")
+def _export_scrap_zonaprop(scrap_results:dict,
+                           type_operation:str,
+                           type_building:str):
+    pd.DataFrame(scrap_results).to_parquet(f"./output/zonaprop_{type_operation}_{type_building}.pkt")
 
 def main_scrap_zonaprop(
-    type_building:Literal["locales-comerciales", "departamentos","oficinas-comerciales"],
+    type_operation: Literal["alquiler", "venta"] = "alquiler", #bug with "venta"
+    type_building:Literal["locales-comerciales", "departamentos","oficinas-comerciales"] = "departamentos",
     export_final_results:bool = True,
                         ) -> list | None:
     """Runs the main process of scraping property listings from ZonaProp.
@@ -103,13 +130,15 @@ def main_scrap_zonaprop(
     Returns:
         list: A list of dictionaries, each representing a property listing.
     """
+    url_list =  _get_url_list(max_number_pages_zonaprop, type_building, type_operation)
+    print("Max html page:", url_list[-1])
     try:
         request = AntiDetectRequests()
-        url = zona_prop_url + type_building + "-alquiler-capital-federal.html"
-        final_dict = scrape_property_listings(request, url)
-        # print(final_dict)
+        # url = zona_prop_url + type_building + f"-{type_operation}-capital-federal.html"
+        final_dict = _scrape_property_listings(request, url_list)
+        print(final_dict)
         if export_final_results:
-            _export_scrap_zonaprop(final_dict, type_building)
+            _export_scrap_zonaprop(final_dict, type_operation ,type_building)
             print("Results exported correctly")
         return final_dict
     except Exception as e:
