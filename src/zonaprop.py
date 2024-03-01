@@ -5,6 +5,7 @@ import time
 import re
 import requests
 from typing import Literal
+from datetime import datetime
 from src.constants import zona_prop_url, max_number_pages_zonaprop
 
 def _get_page_number_url(number:int, type_building:str, type_operation:str) -> str:
@@ -32,14 +33,21 @@ def _parse_property_listings(soup) -> list:
     Returns:
         list: A list of dictionaries, each representing a property listing.
     """
-    property_elements = soup.select('div.sc-1tt2vbg-4.dFNvko')
+    property_elements = soup.select('div.sc-1tt2vbg-5.GcsXo')
     properties = []
+    # print("Propiedad dentro de _parse", property_elements)
     for property_element in property_elements:
         try:
             properties.append(_parse_property(property_element))
+            # print("Se appendio la propiedad", properties)
+            if len(properties == 0):
+                print("be aware of the div selected in the soup, it usually changes.")
+                break
         except Exception:
+            # print("No se appendio ninguna propiedad")
             #There are 'Developing' buildings with a range of prices. 
             pass
+    # print("Propiedades final de _parse", properties)
     return properties
 
 def _parse_property(property_element) -> dict:
@@ -61,7 +69,7 @@ def _parse_property(property_element) -> dict:
     description_element = property_element.select_one('div[data-qa="POSTING_CARD_DESCRIPTION"]')
     expensas_element = property_element.select_one('div[data-qa="expensas"]')
     ap_link_element = property_element.select_one('div[data-qa="posting PROPERTY"]')['data-to-posting']
-
+    # print("price_element", price_element)
     return {
         'Price': price_element.text if price_element else np.nan,
         'Location': location_element.text if location_element else np.nan,
@@ -95,7 +103,9 @@ def _scrape_property_listings(request: AntiDetectRequests,
         print(link)
         try:
             soup = request.bs4(link)
+            # print("sopita", soup)
             properties += _parse_property_listings(soup)
+            # print("propiedades dentro del try",properties)
             # # Find the next page button
             # next_page = soup.select_one('a[data-qa="PAGING_NEXT"]')
             # if itereation_count >= 1:#!debug
@@ -118,7 +128,9 @@ def _scrape_property_listings(request: AntiDetectRequests,
 def _export_scrap_zonaprop(scrap_results:dict,
                            type_operation:str,
                            type_building:str):
-    pd.DataFrame(scrap_results).to_parquet(f"./output/zonaprop_{type_operation}_{type_building}.pkt")
+    date_str = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+
+    pd.DataFrame(scrap_results).to_parquet(f"./output/zonaprop_{type_operation}_{type_building}_{date_str}.pkt")
 
 def main_scrap_zonaprop(
     type_operation: Literal["alquiler", "venta"] = "alquiler", #bug with "venta"
