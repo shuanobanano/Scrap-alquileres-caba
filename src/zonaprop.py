@@ -105,7 +105,7 @@ def _scrape_property_listings(request: AntiDetectRequests,
             soup = request.bs4(link)
             # print("sopita", soup)
             properties += _parse_property_listings(soup)
-            # print("propiedades dentro del try",properties)
+            print("propiedades dentro del try",_parse_property_listings(soup))
             # # Find the next page button
             # next_page = soup.select_one('a[data-qa="PAGING_NEXT"]')
             # if itereation_count >= 1:#!debug
