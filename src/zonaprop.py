@@ -19,12 +19,12 @@ def _get_url_list(max_number:int, type_building:str, type_operation:str) -> list
     match = re.search(r'(\d+)\.html$', last_page_url)
     if match:
         last_page_number = (match.group(1))
+        page_list = [_get_page_number_url(i, type_building, type_operation) for i in range(1, int(last_page_number) + 1)]
+        return page_list
     else:
         print("Could not find last webpage, try again in a few minutes")
-    page_list = [_get_page_number_url(i, type_building, type_operation) for i in range(1, int(last_page_number) + 1)]
-    return page_list
 
-def _parse_property_listings(soup) -> list:
+def _parse_property_listings(soup, posting_container_class:str) -> list:
     """Parses property listings from a BeautifulSoup object.
 
     Args:
@@ -33,7 +33,7 @@ def _parse_property_listings(soup) -> list:
     Returns:
         list: A list of dictionaries, each representing a property listing.
     """
-    property_elements = soup.select('div.sc-1tt2vbg-5.GcsXo')
+    property_elements = soup.select('div.sc-1tt2vbg-5.GcsXo') #Should be detected automatically, it changes randomly over time
     properties = []
     # print("Propiedad dentro de _parse", property_elements)
     for property_element in property_elements:
@@ -41,7 +41,7 @@ def _parse_property_listings(soup) -> list:
             properties.append(_parse_property(property_element))
             # print("Se appendio la propiedad", properties)
             if len(properties == 0):
-                print("be aware of the div selected in the soup, it usually changes.")
+                print("be aware of the div selected in the soup, it usually changes.") #Should be detected automatically, it changes randomly over time
                 break
         except Exception:
             # print("No se appendio ninguna propiedad")
@@ -81,7 +81,14 @@ def _parse_property(property_element) -> dict:
         'Expensas': expensas_element.text if expensas_element else np.nan,
         'Link': zona_prop_url + ap_link_element if ap_link_element else np.nan,
     }
-    
+
+def _get_posting_container_class(soup):
+    posting_container = soup.find(class_='postings-container')
+    classes_inside_posting_container = []
+    for child in posting_container.children:
+        if child.name and child.get('class'):
+            classes_inside_posting_container.extend(child['class'])
+    return classes_inside_posting_container[0]
     
 def _scrape_property_listings(request: AntiDetectRequests, 
                               url_list: list[str],
@@ -103,9 +110,10 @@ def _scrape_property_listings(request: AntiDetectRequests,
         print(link)
         try:
             soup = request.bs4(link)
+            posting_container_class = _get_posting_container_class(soup)
             # print("sopita", soup)
-            properties += _parse_property_listings(soup)
-            print("propiedades dentro del try",_parse_property_listings(soup))
+            properties += _parse_property_listings(soup, posting_container_class)
+            print("propiedades dentro del try",_parse_property_listings(soup, posting_container_class))
             # # Find the next page button
             # next_page = soup.select_one('a[data-qa="PAGING_NEXT"]')
             # if itereation_count >= 1:#!debug
