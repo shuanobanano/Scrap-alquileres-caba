@@ -19,12 +19,12 @@ def _get_url_list(max_number:int, type_building:str, type_operation:str) -> list
     match = re.search(r'(\d+)\.html$', last_page_url)
     if match:
         last_page_number = (match.group(1))
+        page_list = [_get_page_number_url(i, type_building, type_operation) for i in range(1, int(last_page_number) + 1)]
+        return page_list
     else:
         print("Could not find last webpage, try again in a few minutes")
-    page_list = [_get_page_number_url(i, type_building, type_operation) for i in range(1, int(last_page_number) + 1)]
-    return page_list
 
-def _parse_property_listings(soup) -> list:
+def _parse_property_listings(soup, posting_container_class:str) -> list:
     """Parses property listings from a BeautifulSoup object.
 
     Args:
@@ -33,7 +33,7 @@ def _parse_property_listings(soup) -> list:
     Returns:
         list: A list of dictionaries, each representing a property listing.
     """
-    property_elements = soup.select('div.sc-1tt2vbg-5.GcsXo')
+    property_elements = soup.find_all(class_ = posting_container_class) #this should be a list with each posting_container class element
     properties = []
     # print("Propiedad dentro de _parse", property_elements)
     for property_element in property_elements:
@@ -41,7 +41,7 @@ def _parse_property_listings(soup) -> list:
             properties.append(_parse_property(property_element))
             # print("Se appendio la propiedad", properties)
             if len(properties == 0):
-                print("be aware of the div selected in the soup, it usually changes.")
+                print("be aware of the div selected in the soup, it usually changes.") #this should already be solved
                 break
         except Exception:
             # print("No se appendio ninguna propiedad")
@@ -59,29 +59,35 @@ def _parse_property(property_element) -> dict:
     Returns:
         dict: A dictionary containing property details.
     """
-    price_element = property_element.select_one('div[data-qa="POSTING_CARD_PRICE"]')
-    location_element = property_element.select_one('div[data-qa="POSTING_CARD_LOCATION"]')
-    address_element = property_element.select_one('div[class="sc-ge2uzh-0 eXwAuU"]') 
-    photo_elements = property_element.select('img')
-    has_photo = any(photo.get('src').endswith('isFirstImage=true') for photo in photo_elements) #Does not work because of "lazy" js
-    features_elements = property_element.select('div[data-qa="POSTING_CARD_FEATURES"] span')
-    summarize_element = property_element.select_one('a.sc-i1odl-12.EWzaP')
-    description_element = property_element.select_one('div[data-qa="POSTING_CARD_DESCRIPTION"]')
-    expensas_element = property_element.select_one('div[data-qa="expensas"]')
-    ap_link_element = property_element.select_one('div[data-qa="posting PROPERTY"]')['data-to-posting']
+    id_element = property_element.find(attrs={"data-id": True})['data-id']
+    price_element = property_element.find(attrs={"data-qa":"POSTING_CARD_PRICE"}).text
+    location_element = property_element.find(attrs={'data-qa': 'POSTING_CARD_LOCATION'}).text
+    address_element = property_element.find(class_='postingAddress').text
+    features_elements = [span.text for span in property_element.find(attrs={'data-qa': 'POSTING_CARD_FEATURES'}).find_all('span')]
+    description_element = property_element.find(attrs={'data-qa': 'POSTING_CARD_DESCRIPTION'}).text
+    expensas_element = property_element.find(attrs={'data-qa': 'expensas'}).text
+    ap_link_element = property_element.find(attrs={"data-to-posting": True})['data-to-posting']
     # print("price_element", price_element)
     return {
-        'Price': price_element.text if price_element else np.nan,
-        'Location': location_element.text if location_element else np.nan,
-        'Address': address_element.text if address_element else np.nan,
-        'Has_photo': has_photo,
-        'Features': [feature_element.text for feature_element in features_elements],
-        'Summarize': summarize_element.text if summarize_element else np.nan,
-        'Description': description_element.text if description_element else np.nan,
-        'Expensas': expensas_element.text if expensas_element else np.nan,
-        'Link': zona_prop_url + ap_link_element if ap_link_element else np.nan,
+        'id': id_element if id_element else np.nan,
+        'Price': price_element if price_element else np.nan,
+        'Location': location_element if location_element else np.nan,
+        'Address': address_element if address_element else np.nan,
+        # 'Has_photo': has_photo,
+        'Features': [feature_element for feature_element in features_elements],
+        # 'Summarize': summarize_element if summarize_element else np.nan,
+        'Description': description_element if description_element else np.nan,
+        'Expensas': expensas_element if expensas_element else np.nan,
+        'Link': zona_prop_url[:-1] + ap_link_element if ap_link_element else np.nan,
     }
-    
+
+def _get_posting_container_class(soup):
+    posting_container = soup.find(class_='postings-container')
+    classes_inside_posting_container = []
+    for child in posting_container.children:
+        if child.name and child.get('class'):
+            classes_inside_posting_container.extend(child['class'])
+    return classes_inside_posting_container[0]
     
 def _scrape_property_listings(request: AntiDetectRequests, 
                               url_list: list[str],
@@ -103,9 +109,10 @@ def _scrape_property_listings(request: AntiDetectRequests,
         print(link)
         try:
             soup = request.bs4(link)
+            posting_container_class = _get_posting_container_class(soup)
             # print("sopita", soup)
-            properties += _parse_property_listings(soup)
-            print("propiedades dentro del try",_parse_property_listings(soup))
+            properties += _parse_property_listings(soup, posting_container_class)
+            print("propiedades dentro del try",_parse_property_listings(soup, posting_container_class))
             # # Find the next page button
             # next_page = soup.select_one('a[data-qa="PAGING_NEXT"]')
             # if itereation_count >= 1:#!debug
