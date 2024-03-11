@@ -44,7 +44,6 @@ def _parse_property_listings(soup, posting_container_class:str) -> list:
                 print("be aware of the div selected in the soup, it usually changes.") #this should already be solved
                 break
         except Exception:
-            # print("No se appendio ninguna propiedad")
             #There are 'Developing' buildings with a range of prices. 
             pass
     # print("Propiedades final de _parse", properties)
@@ -102,28 +101,16 @@ def _scrape_property_listings(request: AntiDetectRequests,
         list: A list of dictionaries, each representing a property listing.
     """
     properties = []
-    # itereation_count = 0#!debug
-    # while True:
+    itereation_count = 0
     for link in url_list:
-        # itereation_count += 1#!debug
+        itereation_count += 1
         print(link)
         try:
             soup = request.bs4(link)
             posting_container_class = _get_posting_container_class(soup)
-            # print("sopita", soup)
             properties += _parse_property_listings(soup, posting_container_class)
-            print("propiedades dentro del try",_parse_property_listings(soup, posting_container_class))
-            # # Find the next page button
-            # next_page = soup.select_one('a[data-qa="PAGING_NEXT"]')
-            # if itereation_count >= 1:#!debug
-                # break#!debug
-            # if next_page and next_page['href']:
-            #     # Update the link for the next iteration
-            #     link = zona_prop_url + next_page['href']
-            #     print(next_page['href'])
-            # else:
-            #     # No more pages, break the loop
-            #     break
+            if itereation_count == 1:
+                print("Test of properties:\n", properties)
         except requests.exceptions.HTTPError as e:
             print(f"HTTPError occurred: {e}. Retrying in 15 minutes.")
             time.sleep(15*60) # Sleep for 15 minutes
@@ -132,12 +119,12 @@ def _scrape_property_listings(request: AntiDetectRequests,
             break
     return properties
 
-def _export_scrap_zonaprop(scrap_results:dict,
+def _export_scrap_zonaprop(df:pd.DataFrame,
                            type_operation:str,
                            type_building:str):
+    
     date_str = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-
-    pd.DataFrame(scrap_results).to_parquet(f"./output/zonaprop_{type_operation}_{type_building}_{date_str}.pkt")
+    df.to_parquet(f"./output/zonaprop_{type_operation}_{type_building}_{date_str}.pkt")
 
 def main_scrap_zonaprop(
     type_operation: Literal["alquiler", "venta"] = "alquiler", #bug with "venta"
@@ -153,11 +140,13 @@ def main_scrap_zonaprop(
     print("Max html page:", url_list[-1])
     try:
         request = AntiDetectRequests()
-        # url = zona_prop_url + type_building + f"-{type_operation}-capital-federal.html"
         final_dict = _scrape_property_listings(request, url_list)
-        print(final_dict)
+        # print(final_dict)
         if export_final_results:
-            _export_scrap_zonaprop(final_dict, type_operation ,type_building)
+            df = pd.DataFrame(final_dict)
+            df["scrap_date"] = datetime.now()
+            df = df.drop_duplicates() #there are duplicates at house sellings, I do not know why
+            _export_scrap_zonaprop(df, type_operation ,type_building)
             print("Results exported correctly")
         return final_dict
     except Exception as e:
