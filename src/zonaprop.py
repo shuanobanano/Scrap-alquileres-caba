@@ -109,8 +109,8 @@ def _scrape_property_listings(request: AntiDetectRequests,
             soup = request.bs4(link)
             posting_container_class = _get_posting_container_class(soup)
             properties += _parse_property_listings(soup, posting_container_class)
-            if itereation_count == 1:
-                print("Test of properties:\n", properties)
+            # if itereation_count == 1:
+            #     print("Test of properties:\n", properties)
         except requests.exceptions.HTTPError as e:
             print(f"HTTPError occurred: {e}. Retrying in 15 minutes.")
             time.sleep(15*60) # Sleep for 15 minutes
@@ -140,14 +140,15 @@ def main_scrap_zonaprop(
     print("Max html page:", url_list[-1])
     try:
         request = AntiDetectRequests()
-        final_dict = _scrape_property_listings(request, url_list)
-        # print(final_dict)
+        final_list = _scrape_property_listings(request, url_list)
+        # print(final_list)
         if export_final_results:
-            df = pd.DataFrame(final_dict)
+            df = pd.DataFrame(final_list)
             df["scrap_date"] = datetime.now()
-            df = df.drop_duplicates() #there are duplicates at house sellings, I do not know why
+            df = df.drop_duplicates(subset="id") #there are duplicates at house sellings, I do not know why
+            print(df)
             _export_scrap_zonaprop(df, type_operation ,type_building)
             print("Results exported correctly")
-        return final_dict
+        return final_list
     except Exception as e:
         print(f"An error occurred: {e}")
