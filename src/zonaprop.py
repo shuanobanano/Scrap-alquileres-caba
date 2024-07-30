@@ -147,7 +147,7 @@ def main_scrap_zonaprop(
             df["type_operation"] = type_operation
             df = df.drop_duplicates(subset="id") #there are duplicates at house sellings, I do not know why
             print(df)
-            _export_scrap_zonaprop(df, type_operation ,type_building)
+            _export_scrap_zonaprop(df)
             print("Results exported correctly")
         return final_list
     except Exception as e:
