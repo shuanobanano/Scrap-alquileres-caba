@@ -120,14 +120,12 @@ def _scrape_property_listings(request: AntiDetectRequests,
             break
     return properties
 
-def _export_scrap_zonaprop(df:pd.DataFrame,
-                           type_operation:str,
-                           type_building:str):
-    engine = create_engine('sqlite:///zonaprop.db')  # Puedes usar otra base de datos aquí
+def _export_scrap_zonaprop(df:pd.DataFrame):
+    engine = create_engine('sqlite:///zonaprop.db')
     df.to_sql('zonaprop', engine, if_exists='append', index=False)
 
 def main_scrap_zonaprop(
-    type_operation: Literal["alquiler", "venta"] = "alquiler", #bug with "venta"
+    type_operation: Literal["alquiler", "venta"] = "alquiler", 
     type_building:Literal["locales-comerciales", "departamentos","oficinas-comerciales"] = "departamentos",
     export_final_results:bool = True,
                         ) -> list | None:
