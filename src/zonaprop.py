@@ -6,6 +6,7 @@ import re
 import requests
 from typing import Literal
 from datetime import datetime
+from sqlalchemy import create_engine
 from src.constants import zona_prop_url, max_number_pages_zonaprop
 
 def _get_page_number_url(number:int, type_building:str, type_operation:str) -> str:
@@ -122,9 +123,8 @@ def _scrape_property_listings(request: AntiDetectRequests,
 def _export_scrap_zonaprop(df:pd.DataFrame,
                            type_operation:str,
                            type_building:str):
-    
-    date_str = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    df.to_parquet(f"./output/zonaprop_{type_operation}_{type_building}_{date_str}.pkt")
+    engine = create_engine('sqlite:///zonaprop.db')  # Puedes usar otra base de datos aquí
+    df.to_sql('zonaprop', engine, if_exists='append', index=False)
 
 def main_scrap_zonaprop(
     type_operation: Literal["alquiler", "venta"] = "alquiler", #bug with "venta"
@@ -145,6 +145,8 @@ def main_scrap_zonaprop(
         if export_final_results:
             df = pd.DataFrame(final_list)
             df["scrap_date"] = datetime.now()
+            df["type_building"] = type_building
+            df["type_operation"] = type_operation
             df = df.drop_duplicates(subset="id") #there are duplicates at house sellings, I do not know why
             print(df)
             _export_scrap_zonaprop(df, type_operation ,type_building)
