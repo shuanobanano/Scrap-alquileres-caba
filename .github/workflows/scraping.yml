@@ -1,8 +1,9 @@
 name: Monthly Scraping
 
 on:
-  schedule:
-    - cron: '0 0 1 * *'  # Esto se ejecutará a las 00:00 UTC el primer día de cada mes
+  [push]
+  # schedule:
+  #   - cron: '0 0 1 * *'  # Esto se ejecutará a las 00:00 UTC el primer día de cada mes
 
 jobs:
   run-scraping:
