@@ -128,7 +128,7 @@ def main_scrap_zonaprop(
     type_operation: Literal["alquiler", "venta"] = "alquiler", 
     type_building:Literal["locales-comerciales", "departamentos","oficinas-comerciales"] = "departamentos",
     export_final_results:bool = True,
-                        ) -> list | None:
+                        ) -> list:
     """Runs the main process of scraping property listings from ZonaProp.
 
     Returns:
