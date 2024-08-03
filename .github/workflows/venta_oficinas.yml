@@ -1,17 +1,14 @@
-name: Monthly Scraping
+name: Venta oficinas
 
 on:
-  [push]
-  # schedule:
-  #   - cron: '0 0 1 * *'  # Esto se ejecutará a las 00:00 UTC el primer día de cada mes
+  schedule:
+    - cron: '0 0 1 * *'  # Esto se ejecutará a las 00:00 UTC el primer día de cada mes
 
 jobs:
   run-scraping:
     runs-on: ubuntu-latest
 
     permissions:
-      # Give the default GITHUB_TOKEN write permission to commit and push the
-      # added or changed files to the repository.
       contents: write
 
     steps:
@@ -29,7 +26,7 @@ jobs:
         pip install -r requirements.txt
 
     - name: Run scraping script
-      run: python main_scrap.py
+      run: python workflow/6_venta_oficinas.py
 
     - name: Configure Git
       run: |
@@ -40,7 +37,7 @@ jobs:
       run: |
         git add .
         git commit -m "Update db from GitHub Action run"
-    
+
     - name: Push changes
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
