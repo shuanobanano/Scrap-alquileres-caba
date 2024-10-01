@@ -4,6 +4,7 @@ from botasaurus import *
 import time
 import re
 import requests
+from sqlalchemy import create_engine, exc
 from typing import Literal
 from datetime import datetime
 from sqlalchemy import create_engine
@@ -120,14 +121,16 @@ def _scrape_property_listings(request: AntiDetectRequests,
             break
     return properties
 
-def _export_scrap_zonaprop(df:pd.DataFrame):
-    engine = create_engine('sqlite:///zonaprop.db')
-    df.to_sql('zonaprop', engine, if_exists='append', index=False)
+def _export_scrap_zonaprop(df: pd.DataFrame, type_building, type_operation):
+    df.to_pickle(
+        f"./output/zonaprop_{type_operation}_{type_building}_{datetime.now().strftime('%Y_%m_%d')}.pkl"
+    )
 
 def main_scrap_zonaprop(
     type_operation: Literal["alquiler", "venta"] = "alquiler", 
     type_building:Literal["locales-comerciales", "departamentos","oficinas-comerciales"] = "departamentos",
     export_final_results:bool = True,
+    db_file: str = 'zonaprop.db'
                         ) -> list:
     """Runs the main process of scraping property listings from ZonaProp.
 
@@ -139,16 +142,16 @@ def main_scrap_zonaprop(
     try:
         request = AntiDetectRequests()
         final_list = _scrape_property_listings(request, url_list)
-        # print(final_list)
+        
         if export_final_results:
             df = pd.DataFrame(final_list)
             df["scrap_date"] = datetime.now()
             df["type_building"] = type_building
             df["type_operation"] = type_operation
-            df = df.drop_duplicates(subset="id") #there are duplicates at house sellings, I do not know why
+            df = df.drop_duplicates(subset="id")  # Evitar duplicados por id
             print(df)
-            _export_scrap_zonaprop(df)
-            print("Results exported correctly")
+            _export_scrap_zonaprop(df, type_building, type_operation)
+            print("Resultados exportados correctamente.")
         return final_list
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print(f"Ha ocurrido un error: {e}")
