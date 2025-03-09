@@ -10,7 +10,7 @@ def _create_currency_column(df:pd.DataFrame) -> pd.DataFrame:
 
     values = ['USD', 'ARS', 'Consultar']
 
-    df['currency'] = np.select(conditions_currency, values, default=np.nan)
+    df['currency'] = np.select(conditions_currency, values, default="Unknown")
     return df
 
 

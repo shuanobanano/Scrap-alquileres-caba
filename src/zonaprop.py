@@ -60,16 +60,17 @@ def _parse_property(property_element) -> dict:
     Returns:
         dict: A dictionary containing property details.
     """
+    # print(property_element)
     id_element = property_element.find(attrs={"data-id": True})['data-id']
     price_element = property_element.find(attrs={"data-qa":"POSTING_CARD_PRICE"}).text
     location_element = property_element.find(attrs={'data-qa': 'POSTING_CARD_LOCATION'}).text
-    address_element = property_element.find(class_='postingAddress').text
+    address_element = property_element.find(class_='postingLocations-module__location-address').text
     features_elements = [span.text for span in property_element.find(attrs={'data-qa': 'POSTING_CARD_FEATURES'}).find_all('span')]
     description_element = property_element.find(attrs={'data-qa': 'POSTING_CARD_DESCRIPTION'}).text
     expensas_element = property_element.find(attrs={'data-qa': 'expensas'}).text
     ap_link_element = property_element.find(attrs={"data-to-posting": True})['data-to-posting']
     # print("price_element", price_element)
-    return {
+    data = {
         'id': id_element if id_element else np.nan,
         'Price': price_element if price_element else np.nan,
         'Location': location_element if location_element else np.nan,
@@ -81,6 +82,10 @@ def _parse_property(property_element) -> dict:
         'Expensas': expensas_element if expensas_element else np.nan,
         'Link': zona_prop_url[:-1] + ap_link_element if ap_link_element else np.nan,
     }
+    
+    # print(data)
+    
+    return data
 
 def _get_posting_container_class(soup):
     posting_container = soup.find(class_='postings-container')
@@ -111,8 +116,8 @@ def _scrape_property_listings(request: AntiDetectRequests,
             soup = request.bs4(link)
             posting_container_class = _get_posting_container_class(soup)
             properties += _parse_property_listings(soup, posting_container_class)
-            # if itereation_count == 1:
-            #     print("Test of properties:\n", properties)
+            if itereation_count == 1:
+                print("Test of properties:\n", properties)
         except requests.exceptions.HTTPError as e:
             print(f"HTTPError occurred: {e}. Retrying in 15 minutes.")
             time.sleep(15*60) # Sleep for 15 minutes

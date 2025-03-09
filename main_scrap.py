@@ -15,30 +15,30 @@ if __name__ == "__main__":
         export_final_results=True
         )
     
-    main_scrap_zonaprop(
-        type_operation="alquiler",
-        type_building="locales-comerciales",
-        export_final_results=True
-        )
+    # main_scrap_zonaprop(
+    #     type_operation="alquiler",
+    #     type_building="locales-comerciales",
+    #     export_final_results=True
+    #     )
     
-    main_scrap_zonaprop(
-        type_operation="venta",
-        type_building="locales-comerciales",
-        export_final_results=True
-        )
+    # main_scrap_zonaprop(
+    #     type_operation="venta",
+    #     type_building="locales-comerciales",
+    #     export_final_results=True
+    #     )
     
     
-    main_scrap_zonaprop(
-        type_operation="alquiler",
-        type_building="oficinas-comerciales",
-        export_final_results=True
-        )
+    # main_scrap_zonaprop(
+    #     type_operation="alquiler",
+    #     type_building="oficinas-comerciales",
+    #     export_final_results=True
+    #     )
     
-    main_scrap_zonaprop(
-        type_operation="venta",
-        type_building="oficinas-comerciales",
-        export_final_results=True
-        )
+    # main_scrap_zonaprop(
+    #     type_operation="venta",
+    #     type_building="oficinas-comerciales",
+    #     export_final_results=True
+    #     )
     
     final = time.time()
     tiempo_total = final - inicio
