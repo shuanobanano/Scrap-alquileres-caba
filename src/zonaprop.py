@@ -88,7 +88,11 @@ def _parse_property(property_element) -> dict:
     return data
 
 def _get_posting_container_class(soup):
-    posting_container = soup.find(class_='postings-container')
+    posting_containers = soup.find_all(class_=lambda c: c and "postings-container" in c)
+    if len(posting_containers) == 0:
+        raise ValueError("No postings-container found in the soup.")
+    # If more than one, use the second; otherwise, use the first
+    posting_container = posting_containers[1] if len(posting_containers) > 1 else posting_containers[0]
     classes_inside_posting_container = []
     for child in posting_container.children:
         if child.name and child.get('class'):
@@ -114,6 +118,9 @@ def _scrape_property_listings(request: AntiDetectRequests,
         print(link)
         try:
             soup = request.bs4(link)
+            if itereation_count == 1:
+                with open("soup.html", "w", encoding="utf-8") as f:
+                    f.write(str(soup))
             posting_container_class = _get_posting_container_class(soup)
             properties += _parse_property_listings(soup, posting_container_class)
             if itereation_count == 1:
