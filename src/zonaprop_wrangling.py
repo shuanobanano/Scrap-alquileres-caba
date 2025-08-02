@@ -49,5 +49,6 @@ def main_zonaprop_wrangling(df:pd.DataFrame):
     df["Price"] = _clean_number_with_text_column(df["Price"])
     df["Expensas"] = _clean_number_with_text_column(df["Expensas"])
     df["Alquiler / m2"] = df["Price"] / df["metros_cuadrados"]
+    df["Expensas / m2"] = df["Expensas"] / df["metros_cuadrados"]
     return df
     
