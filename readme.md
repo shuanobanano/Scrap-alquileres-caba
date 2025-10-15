@@ -53,6 +53,4 @@ This project is licensed under the MIT License. See the [LICENSE]() file for det
 
 ## Acknowledgments
 
-We express our gratitude to the developers of "zonaprop" for providing access to valuable real estate data. Additionally, we thank the open-source community for their contributions to web scraping tools and data analysis libraries, which have been instrumental in the development of this project.
-
 Thank you for your interest in the Real Estate Market Analysis project! We hope you find the insights and information provided here valuable and informative. Happy analyzing! 🏠✨
