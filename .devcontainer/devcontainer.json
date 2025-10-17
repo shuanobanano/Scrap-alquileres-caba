@@ -1,0 +1,16 @@
+{
+  "name": "inmobiliario-mvp",
+  "build": { "dockerfile": "Dockerfile" },
+  "forwardPorts": [8502],
+  "postCreateCommand": "pip install --upgrade pip setuptools wheel && pip install --prefer-binary --no-cache-dir -r requirements.txt",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "terminal.integrated.defaultProfile.linux": "bash"
+      },
+      "extensions": ["ms-python.python", "ms-toolsai.jupyter"]
+    }
+  },
+  "remoteUser": "vscode"
+}
